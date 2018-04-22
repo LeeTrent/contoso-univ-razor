@@ -30,7 +30,22 @@ namespace ContosoUniversity.Pages.Students
 
             // Student = await _context.Students.SingleOrDefaultAsync(m => m.ID == id);
             // FirstOrDefaultAsync is more efficient at fetching one entity
-            Student = await _context.Students.FirstOrDefaultAsync(m => m.ID == id);
+            //Student = await _context.Students.FirstOrDefaultAsync(m => m.ID == id);
+
+            /**********************************************************************************************
+                The Include and ThenInclude methods cause the context to load the Student.Enrollments
+                navigation property, and within each enrollment the Enrollment.Course navigation property.
+                
+                The AsNoTracking method improves performance in scenarios when the entities returned are
+                not updated in the current context. 
+                
+                FirstOrDefaultAsync is more efficient at fetching one entity
+            ***********************************************************************************************/
+            Student = await _context.Students
+                    .Include(s => s.Enrollments)
+                        .ThenInclude(e => e.Course)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync (m => m.ID == id);            
 
             if (Student == null)
             {
