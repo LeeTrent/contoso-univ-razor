@@ -30,9 +30,20 @@ namespace ContosoUniversity.Pages.Students
                 return NotFound();
             }
 
+            ///////////////////////////////////////////////////////////////////////////
+            // Original scaffolding code
+            ///////////////////////////////////////////////////////////////////////////            
             // Student = await _context.Students.SingleOrDefaultAsync(m => m.ID == id);
+            
+            ///////////////////////////////////////////////////////////////////////////
             // FirstOrDefaultAsync is more efficient at fetching one entity
-            Student = await _context.Students.FirstOrDefaultAsync(m => m.ID == id);
+            ///////////////////////////////////////////////////////////////////////////
+            //Student = await _context.Students.FirstOrDefaultAsync(m => m.ID == id);
+            
+            ///////////////////////////////////////////////////////////////////////////            
+            //FindAsync is a good choice when selecting an entity from the primary key
+            ///////////////////////////////////////////////////////////////////////////            
+            Student = await _context.Students.FindAsync(id);
 
             if (Student == null)
             {
@@ -41,25 +52,25 @@ namespace ContosoUniversity.Pages.Students
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(int? id)
         {
             if (!ModelState.IsValid)
             {
                 return Page();
             }
 
-            _context.Attach(Student).State = EntityState.Modified;
+            var studentToUpdate = await _context.Students.FindAsync(id);
 
-            try
+            if (await TryUpdateModelAsync<Student>(
+                studentToUpdate,
+                "student",
+                s => s.FirstMidName, s => s.LastName, s => s.EnrollmentDate))
             {
                 await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                
+                return RedirectToPage("./Index");
             }
 
-            return RedirectToPage("./Index");
-        }
+            return Page();
+        } 
     }
 }
