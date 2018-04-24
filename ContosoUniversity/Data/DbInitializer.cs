@@ -8,7 +8,18 @@ namespace ContosoUniversity.Data
     {
         public static void Initialize(SchoolContext context)
         {
-            context.Database.EnsureCreated();
+
+            /*
+            ***********************************************************************************************
+            For early development, the EnsureCreated command was used.
+            Is designed for testing or rapid prototyping where the DB is dropped and re-created frequently.
+            EnsureCreated has the following limitations:
+            - Bypasses migrations and creates the DB and schema.
+            - Doesn't create a migrations table.
+            - Can not be used with migrations.
+            ***********************************************************************************************            
+            */
+            //context.Database.EnsureCreated();
 
             // Look for any students.
             if (context.Students.Any())
