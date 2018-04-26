@@ -32,7 +32,7 @@ namespace ContosoUniversity.Models
         (which is also the PK) is non-nullable  
         **************************************************************************************
         */
-        [Required]
+        //[Required] (commented-out to get Pages.Instructor.Edit.OnPostAsync to work)
         public Instructor Instructor { get; set; }
     }
 }

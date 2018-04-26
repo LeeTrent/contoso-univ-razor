@@ -11,53 +11,70 @@ using ContosoUniversity.Models;
 
 namespace ContosoUniversity.Pages.Instructors
 {
-    public class EditModel : PageModel
-    {
-        private readonly ContosoUniversity.Data.SchoolContext _context;
+public class EditModel : InstructorCoursesPageModel
+{
+    private readonly ContosoUniversity.Data.SchoolContext _context;
 
-        public EditModel(ContosoUniversity.Data.SchoolContext context)
+    public EditModel(ContosoUniversity.Data.SchoolContext context)
+    {
+        _context = context;
+    }
+
+    [BindProperty]
+    public Instructor Instructor { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(int? id)
+    {
+        if (id == null)
         {
-            _context = context;
+            return NotFound();
         }
 
-        [BindProperty]
-        public Instructor Instructor { get; set; }
+        Instructor = await _context.Instructors
+            .Include(i => i.OfficeAssignment)
+            .Include(i => i.CourseAssignments).ThenInclude(i => i.Course)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.ID == id);
 
-        public async Task<IActionResult> OnGetAsync(int? id)
+        if (Instructor == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            return NotFound();
+        }
+        PopulateAssignedCourseData(_context, Instructor);
+        return Page();
+    }
 
-            Instructor = await _context.Instructors.SingleOrDefaultAsync(m => m.ID == id);
-
-            if (Instructor == null)
-            {
-                return NotFound();
-            }
+    public async Task<IActionResult> OnPostAsync(int? id, string[] selectedCourses)
+    {
+        if (!ModelState.IsValid)
+        {
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        var instructorToUpdate = await _context.Instructors
+            .Include(i => i.OfficeAssignment)
+            .Include(i => i.CourseAssignments)
+                .ThenInclude(i => i.Course)
+            .FirstOrDefaultAsync(s => s.ID == id);
+
+        if (await TryUpdateModelAsync<Instructor>(
+            instructorToUpdate,
+            "Instructor",
+            i => i.FirstMidName, i => i.LastName,
+            i => i.HireDate, i => i.OfficeAssignment))
         {
-            if (!ModelState.IsValid)
+            if (String.IsNullOrWhiteSpace(
+                instructorToUpdate.OfficeAssignment?.Location))
             {
-                return Page();
+                instructorToUpdate.OfficeAssignment = null;
             }
-
-            _context.Attach(Instructor).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                
-            }
-
+            UpdateInstructorCourses(_context, selectedCourses, instructorToUpdate);
+            await _context.SaveChangesAsync();
             return RedirectToPage("./Index");
         }
+        UpdateInstructorCourses(_context, selectedCourses, instructorToUpdate);
+        PopulateAssignedCourseData(_context, instructorToUpdate);
+        return Page();
     }
+}
 }
